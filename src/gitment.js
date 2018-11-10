@@ -26,9 +26,12 @@ function extendRenderer(instance, renderer) {
 
 class Gitment {
   get accessToken() {
-    return localStorage.getItem(LS_ACCESS_TOKEN_KEY)
+    let token = localStorage.getItem(LS_ACCESS_TOKEN_KEY, null)
+    console.log("xfguo: get accessToken = " + token)
+    return token
   }
   set accessToken(token) {
+    console.log("xfguo: set accessToken = " + token)
     localStorage.setItem(LS_ACCESS_TOKEN_KEY, token)
   }
 
@@ -99,13 +102,25 @@ class Gitment {
       }, options)
 
       this.state.user.isLoggingIn = true
-      http.post('https://gh-oauth.imsun.net', {
-          code,
-          client_id,
-          client_secret,
-        }, '')
+
+      const redirect_uri = this.oauth.redirect_uri || window.location.href
+      console.log("xfguo: redirect_uri: " + redirect_uri +
+        ", this.oauth.redirect_uri = " + this.oauth.redirect_uri)
+
+      http.post('https://cors-anywhere.herokuapp.com/https://github.com/login/oauth/access_token', {
+          client_id: client_id,
+          client_secret: client_secret,
+          code: code,
+          redirect_uri: redirect_uri
+
+      }, '')
         .then(data => {
-          this.accessToken = data.access_token
+          let params = new URLSearchParams(data)
+          let accessToken = params.get('access_token')
+          console.log("xfguo: got the accessToken = " + accessToken
+            + ", and corresponding data = " + data)
+          this.accessToken = accessToken
+          console.log("xfguo: to update comments")
           this.update()
         })
         .catch(e => {
